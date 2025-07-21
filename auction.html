@@ -1,234 +1,1975 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Player Auction UUCL Season-2</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UEM Champion's League Players</title>
+    <style>
+      /* Toggle Button Styles */
+      .toggle-view {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 16px;
+        gap: 8px;
+      }
+      .toggle-btn {
+        background: #fff;
+        border: 1px solid #007bff;
+        color: #007bff;
+        padding: 6px 18px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.2s, color 0.2s;
+      }
+      .toggle-btn.active,
+      .toggle-btn:hover {
+        background: #007bff;
+        color: #fff;
+      }
+      /* Auction Fields */
+      .auction-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 12px;
+        align-items: center;
+      }
+      .auction-fields input[type="text"],
+      .auction-fields input[type="number"] {
+        padding: 7px 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 1em;
+        width: 90%;
+        max-width: 180px;
+        outline: none;
+        transition: border 0.2s;
+      }
+      .auction-fields input:focus {
+        border: 1.5px solid #007bff;
+      }
+      .export-btn {
+        display: block;
+        margin: 32px auto 0 auto;
+        padding: 12px 32px;
+        background: linear-gradient(90deg, #007bff 60%, #00c6ff 100%);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.2em;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: background 0.2s, box-shadow 0.2s;
+      }
+      .export-btn:disabled {
+        background: #b0c4de;
+        color: #eee;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+      /* List View */
+      .player-list {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .player-card.list {
+        flex-direction: row;
+        align-items: center;
+        min-height: 180px;
+        padding: 0 16px;
+      }
+      .player-card.list .player-image-container {
+        width: 140px;
+        min-width: 140px;
+        height: 140px;
+        padding-top: 0;
+      }
+      .player-card.list .player-image {
+        height: 140px;
+        width: 140px;
+        position: static;
+      }
+      .player-card.list .player-info {
+        text-align: left;
+        padding: 24px 32px;
+      }
+      .player-card.list .auction-fields {
+        align-items: flex-start;
+        margin-left: 24px;
+      }
+      /* Basic Page Styles */
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        background-color: #f0f2f5;
+        margin: 0;
+        padding: 24px;
+        background: url("https://t3.ftcdn.net/jpg/05/10/55/58/360_F_510555809_gSP39J8OgWzaMf21CTnqV7CTXU12rP3K.jpg")
+          center center no-repeat fixed;
+        background-size: cover;
+        min-height: 100vh;
+      }
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+      /* Header */
+      .header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
 
-  <!-- xlsx.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-</head>
-<body class="bg-gray-100 min-h-screen text-gray-900"
-  style="background-image: url('https://media.istockphoto.com/id/936417012/vector/cricket-stadium-vector-background.jpg?s=612x612&w=0&k=20&c=ktPUWBDjsTAYT0cjroYMkgJG3AQPLPuSOO1Vd8Urgyg='); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
+      .header h1 {
+        font-size: 2.8em;
+        color: #1c1e21;
+        font-weight: 700;
+      }
 
-  <div class="max-w-7xl mx-auto p-6">
-    <h1 class="text-3xl font-bold text-center mb-6 text-emerald-500">
-      🏏 Player Auction UUCL Season -2
-    </h1>
+      /* Player Grid Layout */
+      .player-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-    <!-- File Upload and Save -->
-    <div class="flex flex-col items-center gap-4 mb-6">
-      <div class="flex gap-4">
-        <input id="fileInput" type="file" accept=".xlsx, .csv"
-          class="p-2 border border-gray-300 rounded bg-white" />
-        <button id="saveBtn"
-          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          💾 Save as JSON
-        </button>
+      /* Player Card Styles */
+      .player-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .player-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      }
+
+      /* Player Image */
+      .player-image-container {
+        width: 100%;
+        padding-top: 100%; /* 1:1 Aspect Ratio */
+        position: relative;
+        background-color: #eee;
+      }
+
+      .player-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Ensures the image covers the area, cropping if necessary */
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      /* Player Info */
+      .player-info {
+        padding: 20px;
+        text-align: center;
+        flex-grow: 1;
+      }
+
+      .player-info h3 {
+        margin: 0 0 8px 0;
+        font-size: 1.4em;
+        color: #333;
+      }
+
+      .player-info p {
+        margin: 4px 0;
+        font-size: 1em;
+        color: #606770;
+      }
+
+      .player-info .role {
+        font-weight: 600;
+        color: #007bff;
+        font-size: 1.1em;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="toggle-view">
+        <button class="toggle-btn active" id="gridBtn">Grid View</button>
+        <button class="toggle-btn" id="detailedBtn">Detailed View</button>
       </div>
-      <p id="fileNameText" class="text-sm text-green-600"></p>
+      <h1>UEM Champion's League Players</h1>
     </div>
-
-    <!-- Toggle View Button -->
-    <div class="flex justify-center mb-6">
-      <button id="toggleView"
-        class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 hidden">
-        🔄 Switch to Detailed View
-      </button>
+    <div id="mainView"></div>
+    <div
+      id="detailedNav"
+      style="
+        display: none;
+        justify-content: center;
+        gap: 24px;
+        margin-top: 24px;
+      "
+    >
+      <button id="prevBtn" class="toggle-btn">Prev</button>
+      <button id="nextBtn" class="toggle-btn">Next</button>
     </div>
+    <button class="export-btn" id="exportBtn">Save JSON</button>
 
-    <!-- Profile Viewer -->
-    <div id="profileViewer"
-      class="flex flex-col items-center justify-center min-h-[300px] mb-6 hidden"></div>
+    <script>
+      // Your complete player data from the XLSX file is now in this JSON array
+      const players = [
+        {
+          Timestamp: "2025-07-17 11:41:59",
+          "Email Address": "abrarsiddiquedps@gmail.com",
+          Name: "Abrar Siddique",
+          Year: "4th Year",
+          Stream: "CST",
+          Section: "B",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1PtgRlAHEoGiMuhpMXizvbFn6wVKiLEJH",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 10:14:16",
+          "Email Address": "deepkumardeydeep@gmail.com",
+          Name: "Deep kumar Dey",
+          Year: "4th Year",
+          Stream: "CST",
+          Section: "A",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1_-E3JmsTF2dEtKsj0Qa6zTnYE3fT0Vcz",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 16:26:08",
+          "Email Address": "harshitupadhyay199@gmail.com",
+          Name: "Harshit Upadhyay",
+          Year: "4th Year",
+          Stream: "CSIT",
+          Section: "A",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1HFr-IwWLyxnU_FzQ1Dd0T7pyNERXZ3Ar",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 19:29:20",
+          "Email Address": "lalitkonar906@gmail.com",
+          Name: "Lalit Konar",
+          Year: "4th Year",
+          Stream: "CST",
+          Section: "C",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Ix31LFk9pysD9DK3syVpk2f__BKHOT8l",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 21:58:49",
+          "Email Address": "altamashsidd17@gmail.com",
+          Name: "Md Altamash Siddique",
+          Year: "4th Year",
+          Stream: "CST ",
+          Section: "B",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=17Bhz9QXrFApSSn_RKr4a9KqBYJFpVpRD",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 20:27:35",
+          "Email Address": "khankhanintelligent@gmail.com",
+          Name: "Quaratulain khan",
+          Year: "4th Year",
+          Stream: "Mechanical engineering",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=18awMQL4xIMTFNBzv4Xs9LlZt3-ddTMdg",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 02:07:47",
+          "Email Address": "rajdeepmondal0907@gmail.com",
+          Name: "Rajdeep Mondal",
+          Year: "4th Year",
+          Stream: "ECE",
+          Section: "B",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=163Xt-fNwQAI42p9qvyurl_VlIjkOmqRu",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 00:20:19",
+          "Email Address": "ritamguha7@gmail.com",
+          Name: "Ritam Guha",
+          Year: "4th Year",
+          Stream: "CSEAIML",
+          Section: "B",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=16FX7ZOqE7X_VeCG12n5cIRM6fyrEs6R6",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 00:46:52",
+          "Email Address": "deysaikat1717@gmail.com",
+          Name: "Saikat Kumar Dey",
+          Year: "4th Year",
+          Stream: "CST",
+          Section: "3C",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1xGnbD-eA577TQp-dTu9kBGUuvKhrzuRG",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 03:41:19",
+          "Email Address": "satyamkumarroy3000@gmail.com",
+          Name: "Satyam Kumar Roy",
+          Year: "4th Year",
+          Stream: "Cse",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Z2XERYUpJxU7WaszmiCIHCvtqPyPhjYD",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-19 17:23:38",
+          "Email Address": "angshu1845@gmail.com",
+          Name: "Angshu Maji",
+          Year: "3rd Year",
+          Stream: "Cst ",
+          Section: "A ",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1AAXrfaHEtNARXJEX-j6jVAjn4fwer-z8",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 07:52:36",
+          "Email Address": "anshpandey2205@gmail.com",
+          Name: "Ansh Pandey",
+          Year: "3rd Year",
+          Stream: "CSE ",
+          Section: "A",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1P1DGtPiQHCVll-im30-zYI_pBVGwaaVS",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 16:12:23",
+          "Email Address": "joydeepmukherjee1705@gmail.com",
+          Name: "Joydeep Mukherjee",
+          Year: "3rd Year",
+          Stream: "CSIT",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1t2lBDcJ8I2NCOtMUDLaOgvtbNl6eXERD",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 19:22:07",
+          "Email Address": "karunamoybaug2005@gmail.com",
+          Name: "Karunamoy Baug",
+          Year: "3rd Year",
+          Stream: "Cse",
+          Section: "C",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1p2qmFB-IizU1OowDRI4HWfvhQnCJQp66",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 06:24:45",
+          "Email Address": "mukherjeesujit602@gmail.com",
+          Name: "Krishnendu Mukherjee",
+          Year: "3rd Year",
+          Stream: "CST ",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1ZKa2dLp4oYWDlu_GX9JMb_qzPepmSghh",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 22:55:43",
+          "Email Address": "praphulln21@gmail.com",
+          Name: "Praphull Kumar",
+          Year: "3rd Year",
+          Stream: "CSR AI&ML",
+          Section: "C",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1P4ly-wohHxAzH3j_6fChIGqlXgg7GCU9",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-19 11:19:07",
+          "Email Address": "das.pratik5002@gmail.com",
+          Name: "Pratik Das",
+          Year: "3rd Year",
+          Stream: "Cse (iot,bt,cs)",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1YTH8gZEvj7KDAT1KSWUA5r-F6qzMULa4",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-17 23:41:48",
+          "Email Address": "alusanti30@gmail.com",
+          Name: "Santi Alu",
+          Year: "3rd Year",
+          Stream: "CSE ",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1_JMSQl1asEv4X9qdkASH7YTUKaO1VnOt",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 20:32:07",
+          "Email Address": "shouviksahoo92@gmail.com",
+          Name: "Shouvik Sahoo",
+          Year: "3rd Year",
+          Stream: "CSE(IoT,CS,BT)",
+          Section: "C",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1ccMZJ1c3u5IB_RrD6r2DHvCxzHtxU-9D",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-17 00:51:57",
+          "Email Address": "somnathmondal2121@gmail.com",
+          Name: "Somnath Mondal",
+          Year: "3rd Year",
+          Stream: "CSE",
+          Section: "D",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=14WYHBMDowoR6ZbtExTWPmS-WpR_55-8P",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 10:30:28",
+          "Email Address": "majisubrata296@gmail.com",
+          Name: "Subrata Maji",
+          Year: "3rd Year",
+          Stream: "CSIT",
+          Section: "B",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=198M04WkAJoaPUZWuKwgwdCOJkVfkDqsH",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-19 22:32:32",
+          "Email Address": "ayushraj2902@gmail.com",
+          Name: "Ayush Raj",
+          Year: "3rd Year",
+          Stream: "Cse",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1tVM1m0Qo5N9UiX1ULnP_Id2qD4KmzCx6",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-20 20:48:40",
+          "Email Address": "amritkumar00001122@gmail.com",
+          Name: "Amrit Kumar",
+          Year: "3rd Year",
+          Stream: "CST ",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1CrElWHB3Rc2S4nGmJcOamcJUUeSlOlC-",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 21:00:59",
+          "Email Address": "dhimanghosh394@gmail.com",
+          Name: "Abhinaba Panja",
+          Year: "2nd Year",
+          Stream: "CSE(IOT)",
+          Section: "A",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1XG4dTb52cwYFpzZSqNYmLaZguG2uOKuz",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 19:39:09",
+          "Email Address": "abhinav.07690@gmail.com",
+          Name: "Abhinav Singh",
+          Year: "2nd Year",
+          Stream: "CSE(Robotics and Ai)",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1ptO18PmiJBi7mhPTutiZV8UDZhfT-9fE",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-19 17:03:41",
+          "Email Address": "mahironald00007@gmail.com",
+          Name: "Abhishek don",
+          Year: "2nd Year",
+          Stream: "Upsc top ranker",
+          Section: "69",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1bKiibEMS56HMwZQ7LyLuZALPC58WnTHw",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 18:06:49",
+          "Email Address": "akash0108200@gmail.com",
+          Name: "Akash Das",
+          Year: "2nd Year",
+          Stream: "Robotics and AI ",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1hGNR7g3jVCmjKJ199KMiOs1B0bjs4L2A",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-19 11:19:35",
+          "Email Address": "arjunnrajput0408@gmail.com",
+          Name: "ARJUN SINGH",
+          Year: "2nd Year",
+          Stream: "CseAI",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1VIX7KLL23jL1dAdiGW4Z457BFe70g9Am",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 23:18:08",
+          "Email Address": "heroictatai@gmail.com",
+          Name: "Arkendu Chatterjee",
+          Year: "2nd Year",
+          Stream: "AIML",
+          Section: "C",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=17CB0WpLrdwAWW4uMBecpYFUbXjsUdQ0I",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 11:57:43",
+          "Email Address": "debrupkhan45@gmail.com",
+          Name: "Debrup Khan",
+          Year: "2nd Year",
+          Stream: "Robotics & AI",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=152UfqgdDpNT5EcosPQ3tuXTg8pWdNn-X",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 21:01:41",
+          "Email Address": "harsuk18@gmail.com",
+          Name: "Harsh Raj",
+          Year: "2nd Year",
+          Stream: "CST ",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1HIvRiPomaxK_sweV2lyX5f3snnePR482",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-19 17:18:33",
+          "Email Address": "rishiisharma808@gmail.com",
+          Name: "Hrishikesh",
+          Year: "2nd Year",
+          Stream: "Cse(iot)",
+          Section: "C",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1tudeBHSKhgAlPgI_TFc1z5geZ8oL_0Hw",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 22:15:48",
+          "Email Address": "kumarmadhusudan878@gmail.com",
+          Name: "Madhusudan Yadav",
+          Year: "2nd Year",
+          Stream: "CSE(IOT)",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1t_88C3MF-OCpE5hlWcRaPLe6nVOWsXa6",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 12:46:51",
+          "Email Address": "amipriyadeep@gmail.com",
+          Name: "Priyadeep Chakraborty",
+          Year: "2nd Year",
+          Stream: "Ece",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1XqRUTvgpGfSK_6M1IJRtnrIa-7bJQEcM",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-17 23:24:02",
+          "Email Address": "senr5163@gmail.com",
+          Name: "Rahul sen",
+          Year: "2nd Year",
+          Stream: "ECE",
+          Section: "A ",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1JCVOtviqv1K73DQds-ez0SnrTapimYNF",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 23:16:11",
+          "Email Address": "rajatkumarchandak92@gmail.com",
+          Name: "RAJATKUMARCHANDAK",
+          Year: "2nd Year",
+          Stream: "CSE(AIML)",
+          Section: "2B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1CpebLLsu-y45qGWaplJFG9Ogjh9qBA1n",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 15:16:29",
+          "Email Address": "bhowmickrayan70@gmail.com",
+          Name: "Rayan Bhowmick",
+          Year: "2nd Year",
+          Stream: "Robotics and AI",
+          Section: "A",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Fk-V6aOfePR1n1dqQU2WtZEr5_Tqt6Oa",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 11:17:58",
+          "Email Address": "rishabhsharma11051@gmail.com",
+          Name: "Rishabh Sharma",
+          Year: "2nd Year",
+          Stream: "CSE ",
+          Section: "D",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1lLo32Q9YmIF5rbDI0kS6SDzU_7UBTNJM",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-19 17:06:49",
+          "Email Address": "rishav49.20@gmail.com",
+          Name: "Rishav Raj",
+          Year: "2nd Year",
+          Stream: "CSE(IOT)",
+          Section: "C",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1_vvQYTf0pRqUai8vru_7vF46Flq100c6",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-19 17:08:04",
+          "Email Address": "swarupg303@gmail.com",
+          Name: "Ritam saha",
+          Year: "2nd Year",
+          Stream: "CSE",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=17RbKdclBTo-nqNs1IzrQo_sjyn2jKiHs",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 21:14:26",
+          "Email Address": "rmaiti510@gmail.com",
+          Name: "Rohit Maiti",
+          Year: "2nd Year",
+          Stream: "Cse",
+          Section: "D",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1nJaEPLi04RA_apPOTm4o4wIkOt6TS92u",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-19 17:13:24",
+          "Email Address": "ronitmishra873@gmail.com",
+          Name: "Ronit Mishra",
+          Year: "2nd Year",
+          Stream: "Cse AI ",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1EFa_SHkJcU5Ig8pS_zdnrNeCu7BrZaMm",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 23:16:09",
+          "Email Address": "officialrupak670@gmail.com",
+          Name: "Rupak Dey",
+          Year: "2nd Year",
+          Stream: "CSE AIML ",
+          Section: "C",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Ol1bourYdhAnvDpa85qJdrLNjhrMtVdP",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 15:36:09",
+          "Email Address": "sagnikkoley5@gmail.com",
+          Name: "Sagnik Koley",
+          Year: "2nd Year",
+          Stream: "CSE(Data Science)",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1zxgqn3M1hV-2T_OS6WGlh8uTNy1kFGdL",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-19 17:59:33",
+          "Email Address": "skaryan1406@gmail.com",
+          Name: "Sk Aryan",
+          Year: "2nd Year",
+          Stream: "CSE(IOTCSBT)",
+          Section: "C",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Mjy1CoEYw0s4NRRV9Kd-njArjNLepC9N",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 20:14:27",
+          "Email Address": "dasmahapatrapranati@gmail.com",
+          Name: "Souhitya Das Mahapatra",
+          Year: "2nd Year",
+          Stream: "Btech CSE (iot cs bt)",
+          Section: "C",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=130QJLN1An8ndySkgKUwRtWoy422HE5wu",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-17 17:15:02",
+          "Email Address": "souhriddipapal@gmail.com",
+          Name: "Souhrid Pal",
+          Year: "2nd Year",
+          Stream: "CSE core",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1CSLwn_COyKKyUN79Zl_wnSPOHMdTGFja",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 23:40:56",
+          "Email Address": "sdsubham2004@gmail.com",
+          Name: "Subham Das",
+          Year: "2nd Year",
+          Stream: "CSE (AI&ML)",
+          Section: "C",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1qhbWWfBdT1j0u1mIkZCMLRREODlnV2EY",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 19:02:52",
+          "Email Address": "subhojitpatra355@gmail.com",
+          Name: "Subhojit Patra",
+          Year: "2nd Year",
+          Stream: "CSE (Networks)",
+          Section: "A",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1RY6x2xpdzPTHLSJJQkbQ_rpSy4NdAu6t",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 18:43:03",
+          "Email Address": "kingzahidpoliteboy@gmail.com",
+          Name: "Zahid Islam",
+          Year: "2nd Year",
+          Stream: "CSE (Cyber Security)",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1SWVp_o-9QgmFsWKEk6vk1a7HceGewOa-",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-19 22:35:53",
+          "Email Address": "ankurraybar31@gmail.com",
+          Name: "Ankur Raybar",
+          Year: "2nd Year",
+          Stream: "CSE ",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1nj1vUyvNpmOTqVMv-65lEWNAO_c8OnvW",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-20 20:41:12",
+          "Email Address": "subhamdutta7115@gmail.com",
+          Name: "Subham Dutta",
+          Year: "2nd Year",
+          Stream: "CSE ",
+          Section: "C",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=11yN9Q6FZEpuwRkL57BHxZ4UVws6hcZ1a",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-20 20:45:53",
+          "Email Address": "krish8900747282@gmail.com",
+          Name: "Krish singh",
+          Year: "2nd Year",
+          Stream: "Cse (iot)",
+          Section: "C",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1yrAFxOslVCQWbQKuI9J90ywLM28Vxn75",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 14:32:09",
+          "Email Address": "abhishekmistry212@gmail.com",
+          Name: "Abhishek Mistry",
+          Year: "1st Year",
+          Stream: "CSE Data Science",
+          Section: "C",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1z2jIAtYaHJipsE21Z0Uv5nC34pjbkbyS",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 19:50:58",
+          "Email Address": "ankuranshu7111@gmail.com",
+          Name: "Abhishek naman",
+          Year: "1st Year",
+          Stream: "Cs(data science)",
+          Section: "B",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1kz-N3RMwRcxsAbWtphMxdUNgjK3maNsy",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 13:55:03",
+          "Email Address": "abirmajumdar03sm@gmail.com",
+          Name: "Abir Majumdar",
+          Year: "1st Year",
+          Stream: "CSE(IOT)",
+          Section: "G",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1HpRAPPS-bCqEz3X-lTqSRLpAdrDuYD3K",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 19:15:02",
+          "Email Address": "adarshraj915314@gmail.com",
+          Name: "Adarsh kumar",
+          Year: "1st Year",
+          Stream: "Computer science (Data science)",
+          Section: "D",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Zro4DhfoOALOCvoTS0LBx2MOuBxrVLjd",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 13:57:19",
+          "Email Address": "rana.adhrit@gmail.com",
+          Name: "Adhrit Rana",
+          Year: "1st Year",
+          Stream: "AI & Robotics ",
+          Section: "F",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=132Zqpe_vjcJRcTbEKivzkhtEKLXyFdVb",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 14:36:54",
+          "Email Address": "venom18102006@gmail.com",
+          Name: "Aditya Gupta",
+          Year: "1st Year",
+          Stream: "Data Science ",
+          Section: "B",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1MPXK-2LAF47XOqaHp9kQGw_1zo6JMSuf",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 13:36:43",
+          "Email Address": "rawanivikky@gmail.com",
+          Name: "Aditya Kumar Verma",
+          Year: "1st Year",
+          Stream: "CSIT",
+          Section: "D",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1wg40bWhJreFihj6El69PmXFxQd91a7H3",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 21:20:21",
+          "Email Address": "agnickghosh39@gmail.com",
+          Name: "Agnick Ghosh",
+          Year: "1st Year",
+          Stream: "IOT",
+          Section: "G",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1knjD1fbZ_w4KBS2L9lIO9iJGbO6ICVj5",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 20:46:13",
+          "Email Address": "rekhasamanta78@gmail.com",
+          Name: "Akash Samanta",
+          Year: "1st Year",
+          Stream: "CST",
+          Section: "E",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1u8C8_lbd38JOPK6jpZ5fRK8RhKacROnL",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 13:58:21",
+          "Email Address": "chakrabortyanik.joy@gmail.com",
+          Name: "Anik Chakraborty",
+          Year: "1st Year",
+          Stream: "CSE AI",
+          Section: "I",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1LKOkugGBuLVhQnLI7I3_HYHGzsuYHKj-",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 19:49:53",
+          "Email Address": "anik22sadhu@gmail.com",
+          Name: "Anik Sadhu",
+          Year: "1st Year",
+          Stream: "CSDS",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1D0pKSuvCOjfZCN49beXsYyl9plD4olAC",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 13:55:50",
+          "Email Address": "mampisahanb@gmail.com",
+          Name: "Aniket Saha",
+          Year: "1st Year",
+          Stream: "CST",
+          Section: "E",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Hs4tZVz1MX2vxT8YktU5SiynK0-e0ltf",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 18:19:02",
+          "Email Address": "cranirban52@gmail.com",
+          Name: "Anirban Chakraborty",
+          Year: "1st Year",
+          Stream: "BTech CSE cs iot bct ",
+          Section: "L",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1F6MfUI2SPmntkP-B-DmvIEH5GKOkp1Ig",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 23:55:10",
+          "Email Address": "aniruddhashome2@gmail.com",
+          Name: "Anirudha Shome",
+          Year: "1st Year",
+          Stream: "CSE(IOT, BCT, CS)",
+          Section: "P",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1uVoW55ybJylQXuaoJWXmjTiIfwKsYIYc",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 20:30:33",
+          "Email Address": "ankanseth170@gmail.com",
+          Name: "ANKAN SETH",
+          Year: "1st Year",
+          Stream: "CSE (AI)",
+          Section: "J",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1GDq_EZTEkNkPWy2eBug_0tReLvqGOFFe",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 18:18:23",
+          "Email Address": "krankit.sharma8757@gmail.com",
+          Name: "Ankit Kumar",
+          Year: "1st Year",
+          Stream: "CSIT ",
+          Section: "D ",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1DT_rLJrDcIi6uTsBDRI2F73UyklmmIs7",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-17 23:26:57",
+          "Email Address": "ojhaankit2306@gmail.com",
+          Name: "Ankit ojha",
+          Year: "1st Year",
+          Stream: "CSE ",
+          Section: "P",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1tvzZmUbatUKkMra1uKzqxwcAVCVAKPGW",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 14:28:06",
+          "Email Address": "mdamaanalikhaan143ah@gmail.com",
+          Name: "Arbaz Hossain",
+          Year: "1st Year",
+          Stream: "CSE (IOT)",
+          Section: "G",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Qp37eOQN-lpnGex5BWMBzpDVWrJGZtw7",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 18:54:51",
+          "Email Address": "arghyadipghosh10@gmail.com",
+          Name: "Arghyadip Ghosh",
+          Year: "1st Year",
+          Stream: "CSE AI",
+          Section: "K",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1DlP-zj-g5hxzRFNoKHDwJG8fBbBJX3XO",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 13:48:01",
+          "Email Address": "arijitchowdhury360@gmail.com",
+          Name: "arijit Chowdhury",
+          Year: "1st Year",
+          Stream: "CSE DS",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1h5MBvk0lNF7wrrBIPmB_uejxk-Tcou8-",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 21:03:57",
+          "Email Address": "palananda30@gmail.com",
+          Name: "Arpan Pal",
+          Year: "1st Year",
+          Stream: "CSE(Data science)",
+          Section: "D",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Xb1mpxB95zuVb7iRrwypVSWXVb8DWjRB",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-19 18:41:48",
+          "Email Address": "arupmondal30042006@gmail.com",
+          Name: "Arup Mondal",
+          Year: "1st Year",
+          Stream: "Cse ai",
+          Section: "K",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1R0dwv_iIjSijCS6joOVok0J4riamnVSv",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 13:43:36",
+          "Email Address": "aryanghosh14august@gmail.com",
+          Name: "Aryan Roy Singh",
+          Year: "1st Year",
+          Stream: "Cse ",
+          Section: "N",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1wCTt0lLIyRG80LuqEPgl-nw-y89rPfTh",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-16 18:06:27",
+          "Email Address": "atanuchatterjee124@gmail.com",
+          Name: "Atanu Chatterjeee",
+          Year: "1st Year",
+          Stream: "CSE data science",
+          Section: "A",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1mXV2Z-NSZTgfpy8KSeHMxeGlO_vTDFCI",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 22:47:51",
+          "Email Address": "karbaridbaran6@gmail.com",
+          Name: "Barid Baran Kar",
+          Year: "1st Year",
+          Stream: "Iot Cs Bt",
+          Section: "I",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1DKX8T58pXx9p6KBp71S2VlkCIm_NQn-e",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 13:26:39",
+          "Email Address": "debojit2407100@gmail.com",
+          Name: "Debojit Das",
+          Year: "1st Year",
+          Stream: "B TECH CSE(AI)",
+          Section: "I",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1TZR6ZhnMCNmNpQeFqVawVrPy073hnLs9",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 05:44:07",
+          "Email Address": "devvjeetsadhukhhan@gmail.com",
+          Name: "Devjeet Sadhukhan",
+          Year: "1st Year",
+          Stream: "B.Tech C.S.E. D.S",
+          Section: "C",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1a-BfOUbAJi9Y0ZziNUfgQtJaASEE-jeZ",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 16:26:04",
+          "Email Address": "manvishdhi@gmail.com",
+          Name: "Dhiraj Bhutia",
+          Year: "1st Year",
+          Stream: "Btech cse",
+          Section: "K",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1uGufyEhj-kU2TWrIRAo_79sbBRPVGwWu",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 14:11:39",
+          "Email Address": "dipchatterjee2007@gmail.com",
+          Name: "Dip chatterjee",
+          Year: "1st Year",
+          Stream: "Cse ( iot+cs+bct)",
+          Section: "O",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1HDCjzZ6nbsZn1V0L7cSHn3d2kNC5LtoH",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 21:09:08",
+          "Email Address": "granthikghosh2007@gmail.com",
+          Name: "Granthik Ghosh",
+          Year: "1st Year",
+          Stream: "CSE (IOT) ",
+          Section: "G",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=19IIBP7jXfEe9IOOayID-n4-VfEeSv3j-",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 21:28:05",
+          "Email Address": "himeshghosh98@gmail.com",
+          Name: "HIMESH GHOSH",
+          Year: "1st Year",
+          Stream: "CSE(AI) ",
+          Section: "J",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=12C7eGwPxC1jAz-b9Ey5Y1GHv9FxaX8Xn",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-16 14:19:57",
+          "Email Address": "hrishikeshmehta02@gmail.com",
+          Name: "Hrishikesh Mehta",
+          Year: "1st Year",
+          Stream: "Robotics and A.i",
+          Section: "F",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=11bipnnDANU_-3wElJz6zFedkkhxEoKTI",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 13:50:37",
+          "Email Address": "jeetchatterjee791@gmail.com",
+          Name: "Jeet Chatterjee",
+          Year: "1st Year",
+          Stream: "CSE AI ",
+          Section: "I",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1oIWRUbmwsYzjAb3n5saVvatQ9ISThI3a",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-19 17:32:00",
+          "Email Address": "kaustavpaul512@gmail.com",
+          Name: "Kaustav Paul",
+          Year: "1st Year",
+          Stream: "CSE IOT",
+          Section: "G",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=11aO9hCBRJc6MSUpp7vhDidLfEh3RDRoR",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 15:18:53",
+          "Email Address": "krish20063@gmail.com",
+          Name: "Krish Shah",
+          Year: "1st Year",
+          Stream: "CSE DS",
+          Section: "G",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1ztDvpIoq_QEIVoZksLWGEDeJsY2nWoVN",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 13:43:45",
+          "Email Address": "sonarkrish4@gmail.com",
+          Name: "Krish Sonar",
+          Year: "1st Year",
+          Stream: "Cse (Ai)",
+          Section: "I",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1IRD_FoHbJMm_b_EDEZnHOZupv6Js3Ogp",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-19 18:06:20",
+          "Email Address": "lahotiradhakrishna@gmail.com",
+          Name: "MOHIT LAHOTI",
+          Year: "1st Year",
+          Stream: "CSE (IOT , CS , BCT)",
+          Section: "N",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1wY8pF2Fj1Gv3P5hFfe4j2l2vFUN1By9y",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 15:05:22",
+          "Email Address": "nitin.kumar.gupta0406@gmail.com",
+          Name: "Nitin Kumar Gupta",
+          Year: "1st Year",
+          Stream: "B Tech CSE ",
+          Section: "A",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1jQK1_hgJRaxDjDdHTZW2bEVRlscPPgCp",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 22:28:14",
+          "Email Address": "psarathibhunia@gmail.com",
+          Name: "ParthaSarathi Bhunia",
+          Year: "1st Year",
+          Stream: "Biotechnology ",
+          Section: "O",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1hurFjGgUwi66dW6xMsplhATTjRoof7jD",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 14:43:40",
+          "Email Address": "pawandevmahato8@gmail.com",
+          Name: "Pawandev Mahato",
+          Year: "1st Year",
+          Stream: "CSIT",
+          Section: "G",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1a-HKfS1B9NWdyICYwlC6EQ-Xf0WsfrsH",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 20:40:31",
+          "Email Address": "pramitsarkar06@gmail.com",
+          Name: "Pramit Sarkar",
+          Year: "1st Year",
+          Stream: "Data Science",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1MITK3oNBJ7TVKpA3fs25jLJ0JNLzD73X",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 00:17:45",
+          "Email Address": "gargi.personal01@gmail.com",
+          Name: "Pratic sadhukhan",
+          Year: "1st Year",
+          Stream: "Iot bct cs ",
+          Section: "L",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=19_PQnVoX3SFNDYhe67EtOKwrILw5wtDU",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 23:16:57",
+          "Email Address": "premshaw866@gmail.com",
+          Name: "Prem shaw",
+          Year: "1st Year",
+          Stream: "CSE (IOT BCT CS)",
+          Section: "P",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1kpCJExDvC9zKiF8Jbfv5qx4nG6AuX6_q",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-16 13:34:59",
+          "Email Address": "rajdeepmondal874@gmail.com",
+          Name: "Rajdeep mondal",
+          Year: "1st Year",
+          Stream: "Btech CSE robotics and ai",
+          Section: "F",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1JYUuE9zSVZo4MQ4b_csIwMn8qaNbMn6h",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 17:59:31",
+          "Email Address": "ranitranit0@gmail.com",
+          Name: "Ranit Mandal",
+          Year: "1st Year",
+          Stream: "Btech Cse",
+          Section: "O",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1l5uOsjqaAsxC-PBLWP1ye7-NjMCyB0F0",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 18:41:58",
+          "Email Address": "raunakpal9564039094@gmail.com",
+          Name: "Raunak Pal",
+          Year: "1st Year",
+          Stream: "Btech CSE",
+          Section: "O",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Eoe0X9ojZwQfpk0WAYH3Jwqo1GEd9Zrz",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 15:44:29",
+          "Email Address": "palsampa146@gmail.com",
+          Name: "Ritwik Paladhi",
+          Year: "1st Year",
+          Stream: "Robotics and Ai ",
+          Section: "F",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1OPNmaGeT44VirtWny8XUv6pq2eyOtUqf",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 13:54:29",
+          "Email Address": "rohanmajumder011@gmail.com",
+          Name: "ROHAN MAJUMDER",
+          Year: "1st Year",
+          Stream: "CSE (IOT,BCT,CS)",
+          Section: "O",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Ss8me5Jx95Z2eF8juvlIYHufLOYYaqdX",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 16:38:15",
+          "Email Address": "rokyghosh16@gmail.com",
+          Name: "Roky Ghosh",
+          Year: "1st Year",
+          Stream: "CSE IOT ",
+          Section: "G",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1Eb69n5CwYtYf5C2pk6wxy-JdxvVCYowG",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 14:01:07",
+          "Email Address": "rounakghosh2003ckt@gmail.com",
+          Name: "ROUNAK GHOSH",
+          Year: "1st Year",
+          Stream: "BTECH CSE (IOT, CS BCT)",
+          Section: "O",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1EiXs13lvfQGvilSVmgerGTjKSeTc0bWL",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 13:56:58",
+          "Email Address": "rupakmandal14374@gmail.com",
+          Name: "Rupak Mondal",
+          Year: "1st Year",
+          Stream: "CSE(IOT,CS, BCT)",
+          Section: "O",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1u44PQEghY7x2kQmbYewswDwtsgqTCYzU",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 13:50:28",
+          "Email Address": "sagnikdas003@gmail.com",
+          Name: "Sagnik Das",
+          Year: "1st Year",
+          Stream: "Cse cyber security ",
+          Section: "N",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1QWzYfepyFYOOYKiUuJHNcwBprSsMzDX2",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 23:00:46",
+          "Email Address": "sameekganguly110@gmail.com",
+          Name: "Sameek Ganguly",
+          Year: "1st Year",
+          Stream: "CSE (Robotics & AI)",
+          Section: "F",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1flRxeMAf-6A6l71wdyhov3cpARXKIDUq",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 19:33:22",
+          "Email Address": "sankhaghosh00@gmail.com",
+          Name: "Sankha Ghosh",
+          Year: "1st Year",
+          Stream: "BTech CSE (AI)",
+          Section: "J",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1-RMEfihm5i8UpRSkB5hfAHyPoYKlYk2E",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 20:53:01",
+          "Email Address": "singharuma500@gmail.com",
+          Name: "Santanu singha",
+          Year: "1st Year",
+          Stream: "Csit",
+          Section: "D",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1wdLT9B5MIkZqX8pMcEHs7pjFU_TYTqHI",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 20:26:37",
+          "Email Address": "sayanghosh200620@gmail.com",
+          Name: "Sayan Ghosh",
+          Year: "1st Year",
+          Stream: "CSE AI ",
+          Section: "K",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1t3FQ2wehAe5NAe9QzHaV440CMhijbeR4",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 19:26:34",
+          "Email Address": "ug2680911@gmail.com",
+          Name: "Sayan Ghosh",
+          Year: "1st Year",
+          Stream: "CSE DATA SCIENCE ",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1NAB6VddJPTMSdG5t-GNy-XRJ4BAokVgu",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 20:12:25",
+          "Email Address": "shariquehossain478@gmail.com",
+          Name: "Sharique Hossain",
+          Year: "1st Year",
+          Stream: "CSIT",
+          Section: "D",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1ky33XYYcRf99hPrGGc-INsDailEHVCNq",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 22:12:54",
+          "Email Address": "shivamkr1976@gmail.com",
+          Name: "Shivam kumar",
+          Year: "1st Year",
+          Stream: "CSIT",
+          Section: "D",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1QqRsr55fdv9tt3JrJzYL95T_w6ocYRsC",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 21:35:51",
+          "Email Address": "bosesoham515@gmail.com",
+          Name: "Soham Bose",
+          Year: "1st Year",
+          Stream: " CSE Data Science ",
+          Section: "B",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1QdGPOrPqjNdLA56OFN_B3fJk5vt8w7bb",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 13:47:26",
+          "Email Address": "palsoham018@gmail.com",
+          Name: "SOHAM PAL",
+          Year: "1st Year",
+          Stream: "Robotics and Ai ",
+          Section: "F",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1gAJEfxWrvsn4B-EttIpmjeW8W2CyaAbr",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 19:32:28",
+          "Email Address": "spsoham95@gmail.com",
+          Name: "Soham Purkait",
+          Year: "1st Year",
+          Stream: "Csc ai",
+          Section: "K",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1_gFlnKcN3joDvgMoOT_hTFJm2MJCwZ97",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-18 19:49:02",
+          "Email Address": "somnathdakal47@gmail.com",
+          Name: "Somnath Dakal",
+          Year: "1st Year",
+          Stream: "BTech Cse Ai ",
+          Section: "K",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1gFZ16TC9hknjI9lkOYKl_Mm0ej9csyZD",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-16 14:25:18",
+          "Email Address": "soumabhadey59@gmail.com",
+          Name: "Soumabha",
+          Year: "1st Year",
+          Stream: "CST",
+          Section: "E",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1ICEQKe7vQXdVZtl9CSu-YkTbnsRpWMd9",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 14:21:51",
+          "Email Address": "soumikmohanta991@gmail.com",
+          Name: "Soumik Mahanta",
+          Year: "1st Year",
+          Stream: "B.tech CSE AI and Robotics ",
+          Section: "F",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1hFMgis3_koENP7ili4iIOfwUIhnbzcRq",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 13:47:21",
+          "Email Address": "rin3.4.3.5.17@gmail.com",
+          Name: "Sourin Ghosh",
+          Year: "1st Year",
+          Stream: "CSE AI",
+          Section: "I",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1w1Cv6Kzo9S9iQJshSvHbtsDa8Q362OkR",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-17 18:21:31",
+          "Email Address": "spandanssr@gmail.com",
+          Name: "Spandan Sinharoy",
+          Year: "1st Year",
+          Stream: "Cs and Data Science ",
+          Section: "C",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1XsLGauAJ5LHkQ9j01TMivJofRV-9Tjpt",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 14:36:30",
+          "Email Address": "subhodeepmondal7907@gmail.com",
+          Name: "Subhodeep Mondal",
+          Year: "1st Year",
+          Stream: "CSE(AI)",
+          Section: "K",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1ubJ-1ucujBpZYwMsyDUodiwbg0gnyz1g",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-16 14:20:38",
+          "Email Address": "pramaniksusanta363@gmail.com",
+          Name: "Surajit Pramanik",
+          Year: "1st Year",
+          Stream: "Deta Science ",
+          Section: "C",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1ZTD0t9EOMGfA7B1z9-ECt-Bb87LnsY5h",
+          "Have you played any previous tournament?": "No",
+        },
+        {
+          Timestamp: "2025-07-16 20:56:58",
+          "Email Address": "suryadey5507@gmail.com",
+          Name: "Surya Dey",
+          Year: "1st Year",
+          Stream: "CSE (DATA SCIENCE)",
+          Section: "C",
+          "Player's Role": "Bowler",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=159kW7VcRNtZczGJpcIypRLSrUzQM07bH",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 15:27:28",
+          "Email Address": "sushantsushant250@gmail.com",
+          Name: "Sushant Singh",
+          Year: "1st Year",
+          Stream: "Cse iot",
+          Section: "G",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1w1mYlat_sDrNRNzwNwtLj75ZUUF-mjEv",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 13:41:50",
+          "Email Address": "chakrabortyswastik19@gmail.com",
+          Name: "SWASTIK CHAKRABORTY",
+          Year: "1st Year",
+          Stream: "CSE(AI)",
+          Section: "K",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1ElkiL8pW9YlnFqWWXPzozN3AClbX12CD",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-19 11:26:59",
+          "Email Address": "joythesmartboy.kat@gmail.com",
+          Name: "Tamjid Ahamed Seikh",
+          Year: "1st Year",
+          Stream: "Cse ai ",
+          Section: "J",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1A3WzKusRTpQ6XthWO4OwrebL9NLsM-LF",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 14:28:33",
+          "Email Address": "ujjwalkumar30775@gmail.com",
+          Name: "Ujjwal Kumar",
+          Year: "1st Year",
+          Stream: "CSE-DATA SCIENCE",
+          Section: "A",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1kgd9bm50Od5utGy01X3xxHlWVEOHS50d",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-18 21:10:26",
+          "Email Address": "utsablaha172@gmail.com",
+          Name: "Utsab Laha",
+          Year: "1st Year",
+          Stream: "CSE (AI)",
+          Section: "J",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1DD_olZXMzDoERLBLopxWUJ93JKX6FtJ-",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 15:22:53",
+          "Email Address": "yashrajchouhan113@gmail.com",
+          Name: "Yash raj",
+          Year: "1st Year",
+          Stream: "CSE(IOT)",
+          Section: "G",
+          "Player's Role": "Batsman",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=14KOtHGeFB0ZV6YJ5PXeWeDvblZx9BAnh",
+          "Have you played any previous tournament?": "Yes",
+        },
+        {
+          Timestamp: "2025-07-16 13:39:26",
+          "Email Address": "yuvraj02731@gmail.com",
+          Name: "Yuvraj Jaiswal",
+          Year: "1st Year",
+          Stream: "CSE(DS)",
+          Section: "B",
+          "Player's Role": "All Rounder",
+          "Upload Pic ":
+            "https://drive.google.com/open?id=1PEjxSactV9toieY2Y3wCGlwAcBNc9hlc",
+          "Have you played any previous tournament?": "Yes",
+        },
+      ];
 
-    <!-- Profile Navigation -->
-    <div class="flex justify-center gap-4 mb-6 hidden" id="profileNav">
-      <button id="prevBtn"
-        class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700">
-        ← Previous
-      </button>
-      <button id="nextBtn"
-        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-800">
-        Next →
-      </button>
-    </div>
-
-    <!-- Player Grid -->
-    <div id="playerGrid"
-      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
-  </div>
-
-  <script>
-    const fileInput = document.getElementById("fileInput");
-    const saveBtn = document.getElementById("saveBtn");
-    const playerGrid = document.getElementById("playerGrid");
-    const profileViewer = document.getElementById("profileViewer");
-    const profileNav = document.getElementById("profileNav");
-    const toggleView = document.getElementById("toggleView");
-    const fileNameText = document.getElementById("fileNameText");
-
-    let currentPlayers = [];
-    let currentProfileIndex = 0;
-    let inDetailedView = false;
-
-    fileInput.addEventListener("change", handleFileUpload);
-    saveBtn.addEventListener("click", saveData);
-    toggleView.addEventListener("click", () => {
-      if (inDetailedView) {
-        profileViewer.classList.add("hidden");
-        profileNav.classList.add("hidden");
-        playerGrid.classList.remove("hidden");
-        toggleView.textContent = "🔄 Switch to Detailed View";
-        inDetailedView = false;
-      } else {
-        showProfile(0);
-        toggleView.textContent = "🔄 Switch to Grid View";
-        inDetailedView = true;
+      /**
+       * This function takes a Google Drive sharing link and converts it
+       * into a direct image link that can be used in an <img> tag.
+       * @param {string} url The Google Drive sharing URL
+       * @returns {string} The direct image URL
+       */
+      function getDirectGoogleDriveImage(url) {
+        // A default placeholder image if the player has no picture
+        const placeholder =
+          "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlYWVhZWEiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjYWFhIj5JbWFnZSYjMTA7Tm90ICYjMTA7Rm91bmQ8L3RleHQ+Cjwvc3ZnPg==";
+        if (!url || typeof url !== "string") return placeholder;
+        // Extract file ID from any Google Drive link
+        const match = url.match(/(?:id=|\/d\/|\/file\/d\/|\/uc\?id=)([\w-]+)/);
+        if (match && match[1]) {
+          // Use a proxy to try to bypass Google Drive hotlinking restrictions
+          const direct = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+          // Use images.weserv.nl proxy (encodeURIComponent required)
+          return `https://images.weserv.nl/?url=${encodeURIComponent(
+            direct.replace(/^https?:\/\//, "")
+          )}`;
+        }
+        return placeholder;
       }
-    });
 
-    document.getElementById("prevBtn").addEventListener("click", () => {
-      if (currentProfileIndex > 0) {
-        saveProfileInputs(currentProfileIndex);
-        showProfile(currentProfileIndex - 1);
-      }
-    });
+      const singlePlayerContainer = document.getElementById(
+        "singlePlayerContainer"
+      );
+      const mainView = document.getElementById("mainView");
+      const detailedNav = document.getElementById("detailedNav");
+      let currentIndex = 0;
+      const teamValues = Array(players.length).fill("");
+      const pointsValues = Array(players.length).fill("");
 
-    document.getElementById("nextBtn").addEventListener("click", () => {
-      if (currentProfileIndex < currentPlayers.length - 1) {
-        saveProfileInputs(currentProfileIndex);
-        showProfile(currentProfileIndex + 1);
-      }
-    });
-
-    // Arrow key navigation
-    window.addEventListener("keydown", (e) => {
-      if (!inDetailedView) return;
-      if (e.key === "ArrowLeft") document.getElementById("prevBtn").click();
-      if (e.key === "ArrowRight") document.getElementById("nextBtn").click();
-    });
-
-    function handleFileUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      fileNameText.textContent = `✔ File Selected: ${file.name}`;
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet);
-        currentPlayers = json.map((raw) => {
-          const player = {};
-          for (let key in raw) {
-            player[key.trim()] = raw[key];
-          }
-          return player;
+      function renderGridView() {
+        mainView.innerHTML = '<div class="player-grid" id="playerGrid"></div>';
+        detailedNav.style.display = "none";
+        const playerGrid = document.getElementById("playerGrid");
+        players.forEach((player, i) => {
+          const imageUrl = getDirectGoogleDriveImage(player["Upload Pic "]);
+          const card = document.createElement("div");
+          card.className = "player-card";
+          card.innerHTML = `
+            <div class="player-image-container">
+              <img src="${imageUrl}" alt="Photo of ${
+            player.Name
+          }" class="player-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlYWVhZWEiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjYWFhIj5JbWFnZSYjMTA7Tm90ICYjMTA7Rm91bmQ8L3RleHQ+Cjwvc3ZnPg=='; this.alt='Image not found';">
+            </div>
+            <div class="player-info">
+              <h3>${player.Name || "N/A"}</h3>
+              <p>${player.Year || "N/A"} - ${player.Stream || "N/A"} (Sec ${
+            player.Section || "N/A"
+          })</p>
+              <p class="role">${player["Player's Role"] || "N/A"}</p>
+              <div class="auction-fields">
+                <input type="text" class="team-input" placeholder="Team Name" value="${
+                  teamValues[i]
+                }" data-idx="${i}" />
+                <input type="number" class="points-input" placeholder="Points" min="0" value="${
+                  pointsValues[i]
+                }" data-idx="${i}" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+              </div>
+            </div>
+          `;
+          card.querySelector(".team-input").addEventListener("input", (e) => {
+            teamValues[i] = e.target.value;
+            updateExportBtn();
+          });
+          card.querySelector(".points-input").addEventListener("input", (e) => {
+            pointsValues[i] = e.target.value;
+            updateExportBtn();
+          });
+          playerGrid.appendChild(card);
         });
+      }
 
-        toggleView.classList.remove("hidden");
-        displayPlayers(currentPlayers);
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function displayPlayers(players) {
-      playerGrid.innerHTML = "";
-      profileViewer.classList.add("hidden");
-      profileNav.classList.add("hidden");
-      playerGrid.classList.remove("hidden");
-
-      players.forEach((player, index) => {
-        const card = document.createElement("div");
-        card.className = "bg-white p-4 rounded-xl shadow space-y-2 hover:ring-2 hover:ring-blue-400 cursor-pointer";
-        card.dataset.index = index;
-        card.addEventListener("click", () => {
-          toggleView.textContent = "🔄 Switch to Grid View";
-          showProfile(index);
-          inDetailedView = true;
-        });
-
-        const name = player["Name"] || "Unknown";
-        const stream = player["Stream"] || "N/A";
-        const role = player["Player's Role"] || player["Player’s Role"] || "N/A";
-        const year = player["Year"] || player["year"] || "N/A";
-
-        card.innerHTML = `
-          <h2 class="text-xl font-semibold">${name}</h2>
-          <p class="text-sm text-gray-600">Stream: ${stream}</p>
-          <p class="text-sm text-gray-600">Role: ${role}</p>
-          <p class="text-sm text-gray-600">Year: ${year}</p>
-          <input placeholder="Team Name" class="w-full border rounded p-1 text-sm team-input" />
-          <input placeholder="Points" type="number" class="w-full border rounded p-1 text-sm points-input" />
+      function renderDetailedView(idx) {
+        const player = players[idx];
+        const imageUrl = getDirectGoogleDriveImage(player["Upload Pic "]);
+        mainView.innerHTML = `
+          <div class="player-card" style="max-width:420px;margin:0 auto;">
+            <div class="player-image-container">
+              <img src="${imageUrl}" alt="Photo of ${
+          player.Name
+        }" class="player-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlYWVhZWEiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjYWFhIj5JbWFnZSYjMTA7Tm90ICYjMTA7Rm91bmQ8L3RleHQ+Cjwvc3ZnPg=='; this.alt='Image not found';">
+            </div>
+            <div class="player-info">
+              <h3>${player.Name || "N/A"}</h3>
+              <p>${player.Year || "N/A"} - ${player.Stream || "N/A"} (Sec ${
+          player.Section || "N/A"
+        })</p>
+              <p class="role">${player["Player's Role"] || "N/A"}</p>
+              <div class="auction-fields">
+                <input type="text" class="team-input" placeholder="Team Name" value="${
+                  teamValues[idx]
+                }" />
+                <input type="number" class="points-input" placeholder="Points" min="0" value="${
+                  pointsValues[idx]
+                }" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+              </div>
+            </div>
+            <div style="text-align:center;margin:10px 0 0 0;color:#888;font-size:0.98em;">Player ${
+              idx + 1
+            } of ${players.length}</div>
+          </div>
         `;
-        playerGrid.appendChild(card);
-      });
-    }
+        detailedNav.style.display = "flex";
+        mainView.querySelector(".team-input").addEventListener("input", (e) => {
+          teamValues[idx] = e.target.value;
+          updateExportBtn();
+        });
+        mainView
+          .querySelector(".points-input")
+          .addEventListener("input", (e) => {
+            pointsValues[idx] = e.target.value;
+            updateExportBtn();
+          });
+      }
 
-    function showProfile(index) {
-      currentProfileIndex = index;
-      const player = currentPlayers[index];
-
-      profileViewer.innerHTML = "";
-      playerGrid.classList.add("hidden");
-      profileViewer.classList.remove("hidden");
-      profileNav.classList.remove("hidden");
-
-      const name = player["Name"] || "Unknown";
-      const stream = player["Stream"] || "N/A";
-      const role = player["Player's Role"] || player["Player’s Role"] || "N/A";
-      const year = player["Year"] || player["year"] || "N/A";
-
-      const card = document.createElement("div");
-      card.className = "bg-white p-8 rounded-xl shadow-xl w-full max-w-md flex flex-col items-center space-y-4";
-
-      card.innerHTML = `
-        <h2 class="text-2xl font-bold">${name}</h2>
-        <p class="text-base text-gray-600">Stream: ${stream}</p>
-        <p class="text-base text-gray-600">Role: ${role}</p>
-        <p class="text-base text-gray-600">Year: ${year}</p>
-        <input placeholder="Team Name" class="w-full border rounded p-1 text-base team-input" value="${player.Team || ''}" />
-        <input placeholder="Points" type="number" class="w-full border rounded p-1 text-base points-input" value="${player.Points || ''}" />
-      `;
-
-      profileViewer.appendChild(card);
-    }
-
-    function saveProfileInputs(index) {
-      const viewer = document.getElementById("profileViewer");
-      const teamInput = viewer.querySelector(".team-input");
-      const pointsInput = viewer.querySelector(".points-input");
-      if (teamInput) currentPlayers[index].Team = teamInput.value;
-      if (pointsInput) currentPlayers[index].Points = pointsInput.value;
-    }
-
-    function saveData() {
-      if (inDetailedView) saveProfileInputs(currentProfileIndex);
-
-      const output = currentPlayers.map((player) => ({
-        Name: player["Name"] || "Unknown",
-        Stream: player["Stream"] || "N/A",
-        Role: player["Player's Role"] || player["Player’s Role"] || "N/A",
-        Year: player["Year"] || player["year"] || "N/A",
-        Team: player.Team || "",
-        Points: player.Points || "",
-      }));
-
-      const blob = new Blob([JSON.stringify(output, null, 2)], {
-        type: "application/json",
+      function showPrev() {
+        if (currentIndex > 0) {
+          currentIndex--;
+          renderDetailedView(currentIndex);
+        }
+      }
+      function showNext() {
+        if (currentIndex < players.length - 1) {
+          currentIndex++;
+          renderDetailedView(currentIndex);
+        }
+      }
+      document.getElementById("prevBtn").onclick = showPrev;
+      document.getElementById("nextBtn").onclick = showNext;
+      document.addEventListener("keydown", (e) => {
+        if (detailedNav.style.display === "flex") {
+          if (e.key === "ArrowLeft") showPrev();
+          if (e.key === "ArrowRight") showNext();
+        }
       });
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "auction_results.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-  </script>
-</body>
+      const gridBtn = document.getElementById("gridBtn");
+      const detailedBtn = document.getElementById("detailedBtn");
+      gridBtn.onclick = () => {
+        gridBtn.classList.add("active");
+        detailedBtn.classList.remove("active");
+        renderGridView();
+      };
+      detailedBtn.onclick = () => {
+        gridBtn.classList.remove("active");
+        detailedBtn.classList.add("active");
+        renderDetailedView(currentIndex);
+      };
+      // Default to grid view
+      renderGridView();
+
+      function getAuctionData() {
+        return players.map((player, i) => ({
+          ...player,
+          teamName: teamValues[i] || null,
+          points: pointsValues[i] || null,
+        }));
+      }
+      function allFieldsFilled() {
+        const data = getAuctionData();
+        return data.every(
+          (p) => p.teamName && p.points && !isNaN(Number(p.points))
+        );
+      }
+      function updateExportBtn() {
+        exportBtn.disabled = false;
+      }
+      updateExportBtn();
+
+      document.getElementById("exportBtn").addEventListener("click", () => {
+        const data = getAuctionData();
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "auction_results.json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    </script>
+  </body>
 </html>
