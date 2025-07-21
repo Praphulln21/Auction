@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Player Auction UUCL Season-2</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- xlsx.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-900"
+  style="background-image: url('https://media.istockphoto.com/id/936417012/vector/cricket-stadium-vector-background.jpg?s=612x612&w=0&k=20&c=ktPUWBDjsTAYT0cjroYMkgJG3AQPLPuSOO1Vd8Urgyg='); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed;">
+
+  <div class="max-w-7xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-center mb-6 text-emerald-500">
+      🏏 Player Auction UUCL Season -2
+    </h1>
+
+    <!-- File Upload and Save -->
+    <div class="flex flex-col items-center gap-4 mb-6">
+      <div class="flex gap-4">
+        <input id="fileInput" type="file" accept=".xlsx, .csv"
+          class="p-2 border border-gray-300 rounded bg-white" />
+        <button id="saveBtn"
+          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          💾 Save as JSON
+        </button>
+      </div>
+      <p id="fileNameText" class="text-sm text-green-600"></p>
+    </div>
+
+    <!-- Toggle View Button -->
+    <div class="flex justify-center mb-6">
+      <button id="toggleView"
+        class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 hidden">
+        🔄 Switch to Detailed View
+      </button>
+    </div>
+
+    <!-- Profile Viewer -->
+    <div id="profileViewer"
+      class="flex flex-col items-center justify-center min-h-[300px] mb-6 hidden"></div>
+
+    <!-- Profile Navigation -->
+    <div class="flex justify-center gap-4 mb-6 hidden" id="profileNav">
+      <button id="prevBtn"
+        class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700">
+        ← Previous
+      </button>
+      <button id="nextBtn"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-800">
+        Next →
+      </button>
+    </div>
+
+    <!-- Player Grid -->
+    <div id="playerGrid"
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const saveBtn = document.getElementById("saveBtn");
+    const playerGrid = document.getElementById("playerGrid");
+    const profileViewer = document.getElementById("profileViewer");
+    const profileNav = document.getElementById("profileNav");
+    const toggleView = document.getElementById("toggleView");
+    const fileNameText = document.getElementById("fileNameText");
+
+    let currentPlayers = [];
+    let currentProfileIndex = 0;
+    let inDetailedView = false;
+
+    fileInput.addEventListener("change", handleFileUpload);
+    saveBtn.addEventListener("click", saveData);
+    toggleView.addEventListener("click", () => {
+      if (inDetailedView) {
+        profileViewer.classList.add("hidden");
+        profileNav.classList.add("hidden");
+        playerGrid.classList.remove("hidden");
+        toggleView.textContent = "🔄 Switch to Detailed View";
+        inDetailedView = false;
+      } else {
+        showProfile(0);
+        toggleView.textContent = "🔄 Switch to Grid View";
+        inDetailedView = true;
+      }
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", () => {
+      if (currentProfileIndex > 0) {
+        saveProfileInputs(currentProfileIndex);
+        showProfile(currentProfileIndex - 1);
+      }
+    });
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+      if (currentProfileIndex < currentPlayers.length - 1) {
+        saveProfileInputs(currentProfileIndex);
+        showProfile(currentProfileIndex + 1);
+      }
+    });
+
+    // Arrow key navigation
+    window.addEventListener("keydown", (e) => {
+      if (!inDetailedView) return;
+      if (e.key === "ArrowLeft") document.getElementById("prevBtn").click();
+      if (e.key === "ArrowRight") document.getElementById("nextBtn").click();
+    });
+
+    function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      fileNameText.textContent = `✔ File Selected: ${file.name}`;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet);
+        currentPlayers = json.map((raw) => {
+          const player = {};
+          for (let key in raw) {
+            player[key.trim()] = raw[key];
+          }
+          return player;
+        });
+
+        toggleView.classList.remove("hidden");
+        displayPlayers(currentPlayers);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function displayPlayers(players) {
+      playerGrid.innerHTML = "";
+      profileViewer.classList.add("hidden");
+      profileNav.classList.add("hidden");
+      playerGrid.classList.remove("hidden");
+
+      players.forEach((player, index) => {
+        const card = document.createElement("div");
+        card.className = "bg-white p-4 rounded-xl shadow space-y-2 hover:ring-2 hover:ring-blue-400 cursor-pointer";
+        card.dataset.index = index;
+        card.addEventListener("click", () => {
+          toggleView.textContent = "🔄 Switch to Grid View";
+          showProfile(index);
+          inDetailedView = true;
+        });
+
+        const name = player["Name"] || "Unknown";
+        const stream = player["Stream"] || "N/A";
+        const role = player["Player's Role"] || player["Player’s Role"] || "N/A";
+        const year = player["Year"] || player["year"] || "N/A";
+
+        card.innerHTML = `
+          <h2 class="text-xl font-semibold">${name}</h2>
+          <p class="text-sm text-gray-600">Stream: ${stream}</p>
+          <p class="text-sm text-gray-600">Role: ${role}</p>
+          <p class="text-sm text-gray-600">Year: ${year}</p>
+          <input placeholder="Team Name" class="w-full border rounded p-1 text-sm team-input" />
+          <input placeholder="Points" type="number" class="w-full border rounded p-1 text-sm points-input" />
+        `;
+        playerGrid.appendChild(card);
+      });
+    }
+
+    function showProfile(index) {
+      currentProfileIndex = index;
+      const player = currentPlayers[index];
+
+      profileViewer.innerHTML = "";
+      playerGrid.classList.add("hidden");
+      profileViewer.classList.remove("hidden");
+      profileNav.classList.remove("hidden");
+
+      const name = player["Name"] || "Unknown";
+      const stream = player["Stream"] || "N/A";
+      const role = player["Player's Role"] || player["Player’s Role"] || "N/A";
+      const year = player["Year"] || player["year"] || "N/A";
+
+      const card = document.createElement("div");
+      card.className = "bg-white p-8 rounded-xl shadow-xl w-full max-w-md flex flex-col items-center space-y-4";
+
+      card.innerHTML = `
+        <h2 class="text-2xl font-bold">${name}</h2>
+        <p class="text-base text-gray-600">Stream: ${stream}</p>
+        <p class="text-base text-gray-600">Role: ${role}</p>
+        <p class="text-base text-gray-600">Year: ${year}</p>
+        <input placeholder="Team Name" class="w-full border rounded p-1 text-base team-input" value="${player.Team || ''}" />
+        <input placeholder="Points" type="number" class="w-full border rounded p-1 text-base points-input" value="${player.Points || ''}" />
+      `;
+
+      profileViewer.appendChild(card);
+    }
+
+    function saveProfileInputs(index) {
+      const viewer = document.getElementById("profileViewer");
+      const teamInput = viewer.querySelector(".team-input");
+      const pointsInput = viewer.querySelector(".points-input");
+      if (teamInput) currentPlayers[index].Team = teamInput.value;
+      if (pointsInput) currentPlayers[index].Points = pointsInput.value;
+    }
+
+    function saveData() {
+      if (inDetailedView) saveProfileInputs(currentProfileIndex);
+
+      const output = currentPlayers.map((player) => ({
+        Name: player["Name"] || "Unknown",
+        Stream: player["Stream"] || "N/A",
+        Role: player["Player's Role"] || player["Player’s Role"] || "N/A",
+        Year: player["Year"] || player["year"] || "N/A",
+        Team: player.Team || "",
+        Points: player.Points || "",
+      }));
+
+      const blob = new Blob([JSON.stringify(output, null, 2)], {
+        type: "application/json",
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "auction_results.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
